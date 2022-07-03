@@ -6,10 +6,14 @@ import importlib
 import pkgutil
 import inspect
 
-from simso.core.SchedulerEvent import SchedulerBeginScheduleEvent, \
-    SchedulerEndScheduleEvent, SchedulerBeginActivateEvent, \
-    SchedulerEndActivateEvent, SchedulerBeginTerminateEvent, \
-    SchedulerEndTerminateEvent
+from simso.core.SchedulerEvent import (
+    SchedulerBeginScheduleEvent,
+    SchedulerEndScheduleEvent,
+    SchedulerBeginActivateEvent,
+    SchedulerEndActivateEvent,
+    SchedulerBeginTerminateEvent,
+    SchedulerEndTerminateEvent,
+)
 from SimPy.Simulation import Monitor
 
 
@@ -18,8 +22,15 @@ class SchedulerInfo(object):
     SchedulerInfo groups the data that characterize a Scheduler (such as the
     scheduling overhead) and do the dynamic loading of the scheduler.
     """
-    def __init__(self, clas='', overhead=0, overhead_activate=0,
-                 overhead_terminate=0, fields=None):
+
+    def __init__(
+        self,
+        clas="",
+        overhead=0,
+        overhead_activate=0,
+        overhead_terminate=0,
+        fields=None,
+    ):
         """
         Args:
             - `name`: Name of the scheduler.
@@ -28,7 +39,7 @@ class SchedulerInfo(object):
 
         Methods:
         """
-        self.filename = ''
+        self.filename = ""
         self.clas = clas
         self.overhead = overhead
         self.overhead_activate = overhead_activate
@@ -53,12 +64,9 @@ class SchedulerInfo(object):
         try:
             clas = None
             if self.clas:
-                if type(self.clas) is type:
-                    clas = self.clas
-                else:
-                    name = self.clas.rsplit('.', 1)[1]
-                    importlib.import_module(self.clas)
-                    clas = getattr(importlib.import_module(self.clas), name)
+                name = self.clas.rsplit(".", 1)[1]
+                importlib.import_module(self.clas)
+                clas = getattr(importlib.import_module(self.clas), name)
             elif self.filename:
                 path, name = os.path.split(self.filename)
                 name = os.path.splitext(name)[0]
@@ -66,8 +74,7 @@ class SchedulerInfo(object):
                 fp, pathname, description = imp.find_module(name, [path])
                 if path not in sys.path:
                     sys.path.append(path)
-                clas = getattr(imp.load_module(name, fp, pathname,
-                                               description), name)
+                clas = getattr(imp.load_module(name, fp, pathname, description), name)
                 fp.close()
 
             return clas
@@ -174,6 +181,24 @@ class Scheduler(object):
         """
         pass
 
+    def on_executed(self, job):
+        """
+        This method is called when a job executes.
+
+        Args:
+            - `job`: The :class:`job <simso.core.Job.Job>` that executes.
+        """
+        pass
+
+    def on_preempted(self, job):
+        """
+        This method is called when a job preempts.
+
+        Args:
+            - `job`: The :class:`job <simso.core.Job.Job>` that preempts.
+        """
+        pass
+
     def schedule(self, cpu):
         """
         The schedule method must be redefined by the simulated scheduler.
@@ -247,8 +272,9 @@ def get_schedulers():
     modules = []
 
     # Special case when using PyInstaller:
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         import pyi_importers
+
         importer = None
         for obj in sys.meta_path:
             if isinstance(obj, pyi_importers.FrozenImporter):
@@ -256,16 +282,15 @@ def get_schedulers():
                 break
 
         for name in importer.toc:
-            if name.startswith('simso.schedulers.'):
+            if name.startswith("simso.schedulers."):
                 modules.append(name)
 
     # Normal case:
     else:
-        package = importlib.import_module('simso.schedulers')
+        package = importlib.import_module("simso.schedulers")
         for importer, modname, ispkg in pkgutil.walk_packages(
-                path=package.__path__,
-                prefix=package.__name__ + '.',
-                onerror=lambda x: None):
+            path=package.__path__, prefix=package.__name__ + ".", onerror=lambda x: None
+        ):
             modules.append(modname)
 
     for modname in sorted(modules):

@@ -2,8 +2,13 @@
 
 from collections import deque
 from SimPy.Simulation import Process, Monitor, hold, waituntil
-from simso.core.ProcEvent import ProcRunEvent, ProcIdleEvent, \
-    ProcOverheadEvent, ProcCxtSaveEvent, ProcCxtLoadEvent
+from simso.core.ProcEvent import (
+    ProcRunEvent,
+    ProcIdleEvent,
+    ProcOverheadEvent,
+    ProcCxtSaveEvent,
+    ProcCxtLoadEvent,
+)
 
 
 RESCHED = 1
@@ -15,8 +20,16 @@ SPEED = 6
 
 
 class ProcInfo(object):
-    def __init__(self, identifier, name, cs_overhead=0, cl_overhead=0,
-                 migration_overhead=0, speed=1.0, data=None):
+    def __init__(
+        self,
+        identifier,
+        name,
+        cs_overhead=0,
+        cl_overhead=0,
+        migration_overhead=0,
+        speed=1.0,
+        data=None,
+    ):
         self.identifier = identifier
         self.name = name
         self.penalty = 0
@@ -46,6 +59,7 @@ class Processor(Process):
     <simso.core.Scheduler.Scheduler.on_terminated>` or in a :class:`timer
     <simso.core.Timer.Timer>` handler.
     """
+
     _identifier = 0
 
     @classmethod
@@ -69,8 +83,7 @@ class Processor(Process):
         self._cl_overhead = proc_info.cl_overhead
         self._migration_overhead = proc_info.migration_overhead
         self.set_caches(proc_info.caches)
-        self.timer_monitor = Monitor(name="Monitor Timer" + proc_info.name,
-                                     sim=model)
+        self.timer_monitor = Monitor(name="Monitor Timer" + proc_info.name, sim=model)
         self._speed = proc_info.speed
 
     def resched(self):
@@ -89,6 +102,8 @@ class Processor(Process):
     def preempt(self, job=None):
         self._evts = deque([e for e in self._evts if e[0] != PREEMPT])
         self._evts.append((PREEMPT,))
+        if self._running is not None:
+            self.sched.on_preempted(self._running)
         self._running = job
 
     def timer(self, timer):
@@ -211,8 +226,7 @@ class Processor(Process):
 
                     # If trying to execute a terminated job, warn and ignore:
                     if job is not None and not job.is_active():
-                        print("Can't schedule a terminated job! ({})"
-                              .format(job.name))
+                        print("Can't schedule a terminated job! ({})".format(job.name))
                         continue
 
                     # if the job was running somewhere else, stop it.
@@ -224,13 +238,15 @@ class Processor(Process):
 
                     if job:
                         job.task.cpu = cpu
+                        self.sched.on_executed(job)
 
                 # Forbid to run a job simultaneously on 2 or more processors.
                 running_tasks = [
-                    cpu.running.name
-                    for cpu in self._model.processors if cpu.running]
-                assert len(set(running_tasks)) == len(running_tasks), \
-                    "Try to run a job on 2 processors simultaneously!"
+                    cpu.running.name for cpu in self._model.processors if cpu.running
+                ]
+                assert len(set(running_tasks)) == len(
+                    running_tasks
+                ), "Try to run a job on 2 processors simultaneously!"
 
                 self.sched.release_lock()
                 self.sched.monitor_end_schedule(self)
