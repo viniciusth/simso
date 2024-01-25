@@ -70,8 +70,9 @@ class Job(Process):
         self.cpu.was_running = self
 
         self._monitor.observe(JobEvent(self, JobEvent.EXECUTE, self.cpu))
-        self._sim.logger.log("{} Executing on {}".format(
-            self.name, self._task.cpu.name), kernel=True)
+        self._sim.logger.log(
+            "{} Executing on {}".format(self.name, self._task.cpu.name), kernel=True
+        )
 
     def _on_stop_exec(self):
         if self._last_exec is not None:
@@ -85,8 +86,9 @@ class Job(Process):
         self._was_running_on = self.cpu
 
         self._monitor.observe(JobEvent(self, JobEvent.PREEMPTED))
-        self._sim.logger.log(self.name + " Preempted! ret: " +
-                             str(self.interruptLeft), kernel=True)
+        self._sim.logger.log(
+            self.name + " Preempted! ret: " + str(self.interruptLeft), kernel=True
+        )
 
     def _on_terminated(self):
         self._on_stop_exec()
@@ -140,8 +142,10 @@ class Job(Process):
         True if the end_date is greater than the deadline or if the job was
         aborted.
         """
-        return (self._absolute_deadline * self._sim.cycles_per_ms <
-                self._end_date or self._aborted)
+        return (
+            self._absolute_deadline * self._sim.cycles_per_ms < self._end_date
+            or self._aborted
+        )
 
     @property
     def start_date(self):
@@ -161,8 +165,9 @@ class Job(Process):
     @property
     def response_time(self):
         if self._end_date:
-            return (float(self._end_date) / self._sim.cycles_per_ms -
-                    self._activation_date)
+            return (
+                float(self._end_date) / self._sim.cycles_per_ms - self._activation_date
+            )
         else:
             return None
 
@@ -178,8 +183,9 @@ class Job(Process):
         """
         Dynamic laxity of the job in ms.
         """
-        return (self.absolute_deadline - self.ret
-                ) * self.sim.cycles_per_ms - self.sim.now()
+        return (
+            self.absolute_deadline - self.ret
+        ) * self.sim.cycles_per_ms - self.sim.now()
 
     @property
     def computation_time(self):
@@ -196,8 +202,7 @@ class Job(Process):
         if self._last_exec is None:
             return int(self._computation_time)
         else:
-            return (int(self._computation_time) +
-                    self.sim.now() - self._last_exec)
+            return int(self._computation_time) + self.sim.now() - self._last_exec
 
     @property
     def actual_computation_time(self):
@@ -205,8 +210,7 @@ class Job(Process):
         Computation time in ms as if the processor speed was 1.0 during the
         whole execution.
         """
-        return float(
-            self.actual_computation_time_cycles) / self._sim.cycles_per_ms
+        return float(self.actual_computation_time_cycles) / self._sim.cycles_per_ms
 
     @property
     def actual_computation_time_cycles(self):
@@ -291,7 +295,7 @@ class Job(Process):
             # Wait an execute order.
             yield passivate, self
 
-            # Execute the job.
+            # Execute the job.
             if not self.interrupted():
                 self._on_execute()
                 # ret is a duration lower than the remaining execution time.
