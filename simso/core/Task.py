@@ -161,6 +161,10 @@ class GenericTask(Process):
         return self._task_info.base_cpi
 
     @property
+    def last_cpu(self):
+        return self._last_cpu
+
+    @property
     def data(self):
         """
         Extra data to characterize the task. Only used by the scheduler.
