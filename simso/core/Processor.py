@@ -85,6 +85,7 @@ class Processor(Process):
         self.set_caches(proc_info.caches)
         self.timer_monitor = Monitor(name="Monitor Timer" + proc_info.name, sim=model)
         self._speed = proc_info.speed
+        self.idle_time = None
 
     def resched(self):
         """
@@ -108,6 +109,42 @@ class Processor(Process):
 
     def timer(self, timer):
         self._evts.append((TIMER, timer))
+
+    # ----- simso-energy -----
+    def set_idle(self, period):
+        self._power.count_energy(self, float(period))
+
+    def set_dummy(self, x):
+        if self.idle_time == None:
+            self.idle_time = self.sim.now()
+
+            self._power.energyMode(self.sim.now(), self, x)
+
+    def stop_dummy(self):
+        if self.idle_time != None:
+            self.idle_time = None
+
+            self._power.stop_idle(self, self.sim.now())
+
+    def set_busy(self):
+        if self.idle_time != None:
+            period = self.sim.now() - self.idle_time
+            self._power.record_idle_time(self, period)
+            self.idle_time = None
+
+    def set_idle_extend(self, time):
+
+        if self.idle_time == None:
+            self.idle_time = self.sim.now()
+            self._power.set_state(time)
+
+    def stop_idle_extend(self):
+        if self.idle_time != None:
+            time = self.sim.now() - self.idle_time
+            self.idle_time = None
+
+            self._power.stop_state(self, time)
+    # ----- simso-energy -----
 
     def set_speed(self, speed):
         assert speed >= 0, "Speed must be positive."
